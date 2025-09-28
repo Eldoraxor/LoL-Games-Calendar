@@ -21,7 +21,7 @@ def postgres_update_data(data_df : pd.DataFrame, table_name : str, keys : list):
 
     data_to_insert = list(data_df.itertuples(index=False, name=None))
 
-    with connector("LoL_esport_data") as conn:
+    with connector("LoL_games") as conn:
         with conn.cursor() as mycursor:
             mycursor.executemany(insert_query, data_to_insert)
         conn.commit()
