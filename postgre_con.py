@@ -32,7 +32,7 @@ def query_postgre(table : str, col_list : list):
     col_str = ",".join(col_list) if len(col_list)>1 else col_list[0]
     query = f"SELECT {col_str} from {table}"
 
-    with connector() as conn:
+    with connector("LoL_games") as conn:
         with conn.cursor() as mycursor:
             mycursor.execute(query)
             query_result = mycursor.fetchall()

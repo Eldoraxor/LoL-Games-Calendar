@@ -33,6 +33,22 @@ def get_matches(tournament_name : str=None):
     matches_df.rename(columns={"DateTime UTC": "DateTime_UTC"}, inplace=True)
     return matches_df
 
+def get_match_games(match_id : str):
+    #strMatchId = '(' + ', '.join(f"'{match_id}'" for match_id in match_ids) + ')'
+    #where_condition = f"MG.MatchId IN {strMatchId}"
+    #print(where_condition)
+    site = EsportsClient("lol")
+    games = site.cargo_client.query(
+        tables = "MatchScheduleGame = MG",
+        fields = "MG.RiotPlatformGameId, MG.MatchId, MG.GameId, MG.Blue, MG.Red, MG.Winner, MG.BlueScore, MG.RedScore, MG.OverviewPage, MG.N_GameInMatch",
+        where = f"MG.MatchId = '{match_id}'"
+        )
+    games_df = pd.DataFrame(games)
+    games_df.rename(columns={"N GameInMatch": "GameInMatch"}, inplace=True)
+    #games_df["Gamelength"] = "00:" + games_df["Gamelength"]
+    #games_df.drop(["DateTime UTC__precision"], axis=1, inplace=True)
+    return games_df
+
 def get_scoreboard_games(tournament_names : str):
     site = EsportsClient("lol")
     games = site.cargo_client.query(
