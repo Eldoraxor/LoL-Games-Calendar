@@ -62,11 +62,12 @@ def get_scoreboard_games(tournament_names : str):
     return games_df
 
 def get_teams(team_names: str):
+    safe_team_names = team_names.replace("'", "''")
     site = EsportsClient("lol")
     teams = site.cargo_client.query(
-        tables="Teams=T",
-        where=f"T.OverviewPage IN {team_names}",
-        fields="Name, OverviewPage, Short, Location, Region, Image, IsDisbanded, RenamedTo"
+        tables = "Teams=T",
+        fields = "T.Name, T.OverviewPage, T.Short, T.Location, T.Region",
+        where = f"T.OverviewPage = '{safe_team_names}'"
     )
     teams_df = pd.DataFrame(teams)
     return teams_df
@@ -84,15 +85,16 @@ def get_scoreboard_teams(tournament_names : str):
     team_games_df["Team"] = team_games_df["Team"].apply(lambda x: x[0].upper() + x[1:] if isinstance(x, str) and x else x)
     return team_games_df
 
-def get_players(player_names: str):
+def get_players(team_names: str):
+    safe_team_names = team_names.replace("'", "''")
     site = EsportsClient("lol")
     players = site.cargo_client.query(
         tables="Players=P",
-        where=f"P.Player IN {player_names}",
-        fields="ID, Player, Name, NativeName, Country, Nationality, NationalityPrimary, Birthdate, Role, Residency, Lolpros, IsRetired, OverviewPage"
+        fields="P.ID, P.Player, P.Name, P.NativeName, P.Country, P.Nationality, P.NationalityPrimary, P.Birthdate, P.Team, P.Role, P.Residency, P.Lolpros, P.IsRetired, P.OverviewPage",
+        where=f"P.Team = '{safe_team_names}'"
     )
     players_df = pd.DataFrame(players)
-    #players_df.drop(["Birthdate__precision"], axis=1, inplace=True)
+    players_df.drop(["Birthdate__precision"], axis=1, inplace=True)
     return players_df
 
 def get_scoreboard_players(tournament_names: str):
