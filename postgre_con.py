@@ -17,7 +17,31 @@ def postgres_update_data(data_df : pd.DataFrame, table_name : str, keys : list):
     keys = ', '.join(['\"' + key + '\"' for key in keys])
     placeholders = ', '.join(['%s'] * len(columns))
 
-    insert_query = f"INSERT INTO public.{table_name} ({columns_str}) VALUES ({placeholders}) ON CONFLICT ({keys}) DO NOTHING;"
+    # reconstruct key list (keys was turned into a comma-joined quoted string above)
+    key_list = [k.strip().strip('"') for k in keys.split(',')]
+    # build SET clause for all non-key columns
+    set_assignments = []
+    for col in data_df.columns:
+        if col not in key_list:
+            qcol = f'"{col}"'
+            set_assignments.append(f'{qcol} = EXCLUDED.{qcol}')
+    set_clause = ', '.join(set_assignments)
+
+    if set_clause:
+        non_key_cols = [col for col in data_df.columns if col not in key_list]
+        diff_conditions = ' OR '.join(
+            [f'EXCLUDED.\"{col}\" IS DISTINCT FROM public.{table_name}.\"{col}\"' for col in non_key_cols]
+        )
+        insert_query = (
+            f'INSERT INTO public.{table_name} ({columns_str}) VALUES ({placeholders}) '
+            f'ON CONFLICT ({keys}) DO UPDATE SET {set_clause} '
+            f'WHERE {diff_conditions};'
+        )
+    else:
+        insert_query = (
+            f'INSERT INTO public.{table_name} ({columns_str}) VALUES ({placeholders}) '
+            f'ON CONFLICT ({keys}) DO NOTHING;'
+        )
 
     data_to_insert = list(data_df.itertuples(index=False, name=None))
 

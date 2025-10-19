@@ -1,18 +1,16 @@
 from mwrogue.esports_client import EsportsClient
 import pandas as pd
-#from postgre_con import postgres_update_data
-#from download_json import register_new_JSON
+from mwrogue.auth_credentials import AuthCredentials
 
-site = EsportsClient("lol")
+credentials = AuthCredentials(user_file="LoL_bot")
+site = EsportsClient('lol', credentials=credentials)
 
 def get_tournaments(league : str=None, region : str=None, year : str=None):
-    site = EsportsClient("lol")
     where_conditions = [f"T.League = '{league}'" if league!=None else "", 
                         f"T.Region = '{region}'" if region!=None else "",
                         f"T.Year = '{str(year)}'" if year!=None else ""]
     where_conditions = [condition for condition in where_conditions if condition]
     where_clause = " AND ".join(where_conditions)
-    print(where_clause)
 
     tournaments = site.cargo_client.query(
         tables = "Tournaments = T",
@@ -27,7 +25,7 @@ def get_matches(tournament_name : str=None):
     matches = site.cargo_client.query(
         tables = "MatchSchedule = MS",
         fields = "MS.MatchId, MS.Team1, MS.Team2, MS.Team1Final, MS.Team2Final, MS.Winner, MS.DateTime_UTC, MS.MatchDay, MS.IsFlexibleStart, MS.IsReschedulable, MS.OverviewPage, MS.ShownName, MS.ShownRound, MS.Phase, MS.Stream, MS.Patch",
-        where = f"MS.ShownName = '{tournament_name}'" if tournament_name!=None else "")
+        where = f"MS.ShownName LIKE '%{tournament_name}%'" if tournament_name!=None else "")
     matches_df = pd.DataFrame(matches)
     matches_df.drop(["DateTime UTC__precision"], axis=1, inplace=True)
     matches_df.rename(columns={"DateTime UTC": "DateTime_UTC"}, inplace=True)
